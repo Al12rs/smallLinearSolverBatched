@@ -52,19 +52,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: TestProject
+all: linearSolverBatchedLinux
 
 # Tool invocations
-TestProject: $(OBJS) $(USER_OBJS)
+linearSolverBatchedLinux: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: NVCC Linker'
-	/usr/local/cuda-10.1/bin/nvcc --cudart static --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37 -link -o  "TestProject" $(OBJS) $(USER_OBJS) $(LIBS)
+	/usr/local/cuda-10.1/bin/nvcc --cudart static --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37 -link -o  "linearSolverBatchedLinux" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(CC_DEPS)$(C++_DEPS)$(EXECUTABLES)$(C_UPPER_DEPS)$(CXX_DEPS)$(OBJS)$(CU_DEPS)$(CPP_DEPS)$(C_DEPS) TestProject
+	-$(RM) $(CC_DEPS)$(C++_DEPS)$(EXECUTABLES)$(C_UPPER_DEPS)$(CXX_DEPS)$(OBJS)$(CU_DEPS)$(CPP_DEPS)$(C_DEPS) linearSolverBatchedLinux
 	-@echo ' '
 
 .PHONY: all clean dependents
