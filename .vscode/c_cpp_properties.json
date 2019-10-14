@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/cuda-10.1/targets/x86_64-linux/include",
+                "/usr/include/c++/8",
+                "/usr/include/x86_64-linux-gnu/c++/8",
+                "/usr/include/c++/8/backward",
+                "/usr/lib/gcc/x86_64-linux-gnu/8/include",
+                "/usr/local/include",
+                "/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/local/cuda-10.1/bin/nvcc",
+            "cStandard": "c99",
+            "cppStandard": "c++11"
+        }
+    ],
+    "version": 4
+}

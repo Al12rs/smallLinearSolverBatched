@@ -3,8 +3,12 @@
 #include <string.h>
 #include <cublas_v2.h>
 #include "utils.h"
+#include "testings.h"
 #include "operation_batched.h"
 
+#ifndef ERR_SUCCESS
+#define ERR_SUCCESS 0
+#endif
 /***************************************************************************//**
  Purpose
  -------
@@ -54,9 +58,18 @@
 
  *******************************************************************************/
 extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
-		float **h_x, int batchCount) {
-	magma_int_t N, nrhs, lda, ldb, ldda, lddb, info, sizeA, sizeB;
+		float **h_X, int batchCount) {
 
+	magma_int_t N, nrhs, lda, ldb, ldda, lddb, info, sizeA, sizeB;
+	magmaFloat_ptr d_A, d_B;
+	magma_int_t *dipiv, *dinfo_array;
+    magma_int_t *h_info;
+	float **dA_array = NULL;
+    float **dB_array = NULL;
+	magma_int_t **dipiv_array = NULL;
+	const int numStreams = 3;
+    cudaStream_t cuda_stream[numStreams];
+	magma_int_t resCode = ERR_SUCCESS;
 
 	N = n;
 	//number of right hand sides columns, for this case 1.
@@ -68,10 +81,125 @@ extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
 	sizeA = lda * N * batchCount;
 	sizeB = ldb * nrhs * batchCount;
 
-	//Allocate host memory for result;
-	//TESTING_CHECK( magma_smalloc_cpu( &h_X, sizeB ));
+	//Query device info and set up.
+	magma_init();
 
-	//magma_init();
+	// Generate streams for parallel operations
+	for (int i = 0; i < numStreams; i++) {
+        cudaStreamCreate(&cuda_stream[i]);
+    }
+
+	//Allocate host memory for result;
+	resCode = magma_smalloc_cpu( h_X, sizeB);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    resCode = magma_imalloc_cpu( &h_info, batchCount);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+
+	//Allocate device memory for A, B and permutation matrices. 
+	resCode = magma_smalloc( &d_A, ldda*N*batchCount);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    resCode = magma_smalloc( &d_B, lddb*nrhs*batchCount);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    resCode = magma_imalloc( &dipiv, N * batchCount);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	//the success result array
+    resCode = magma_imalloc( &dinfo_array, batchCount);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+	//Allocate the array of pointers to the actual sequential memory
+	resCode = magma_malloc( (void**) &dA_array, batchCount * sizeof(float*) );
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    resCode = magma_malloc( (void**) &dB_array,    batchCount * sizeof(float*) );
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    resCode = magma_malloc( (void**) &dipiv_array, batchCount * sizeof(magma_int_t*) );
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+	//Copy matrices A to device using stream[0]
+	resCode = cublasSetMatrixAsync(
+                int(N), int(N*batchCount), sizeof(float),
+                h_A, int(lda),
+                d_A, int(ldda), 
+				cuda_stream[0]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+	//Copy matrices B to device using stream[1] so it's concurrent to A.
+	resCode = cublasSetMatrixAsync(
+                int(N), int(nrhs * batchCount), sizeof(float),
+                h_B, int(ldb),
+                d_B, int(lddb), 
+				cuda_stream[1]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+	//Convert consecutive values into array of values with size ldda*N
+	magma_iset_pointer(dipiv_array, dipiv, 1, 0, 0, N, batchCount, cuda_stream[2]);
+	magma_sset_pointer(dA_array, d_A, ldda, 0, 0, ldda*N, batchCount, cuda_stream[0]);
+    magma_sset_pointer(dB_array, d_B, lddb, 0, 0, lddb*nrhs, batchCount, cuda_stream[1]);
+
+	//Sync the parallel streams into one for the main function call.
+	resCode = cudaStreamSynchronize(cuda_stream[0]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    resCode = cudaStreamSynchronize(cuda_stream[1]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    resCode = cudaStreamSynchronize(cuda_stream[2]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+	//Perform solution on Device
+    info = linearSolverSLU_batched(N, nrhs, dA_array, ldda, 
+								   dipiv_array, dB_array, lddb, 
+								   dinfo_array, batchCount, cuda_stream[0]);
+	
+	//Copy success result to host
+	resCode = cublasGetVectorAsync(
+                int(batchCount), sizeof(int),
+                dinfo_array, 1,
+                h_info, 1, cuda_stream[0]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+	//Copy solution vector x to host
+	resCode = cublasGetMatrixAsync(
+                int(N), int(nrhs *batchCount), sizeof(float),
+                d_B, int(lddb),
+                h_X, int(ldb), cuda_stream[1]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+	//Chech for reported errors
+    resCode = cudaStreamSynchronize(cuda_stream[0]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    for (int i=0; i < batchCount; i++)
+    {
+    	if (h_info[i] != 0 ) {
+			resCode = h_info[i];
+            goto cleanup;
+        }
+    }
+    if (info != 0) {
+		resCode = info;
+        goto cleanup;
+    }
+
+	//Verify copy finished before cleanup.
+    resCode = cudaStreamSynchronize(cuda_stream[1]);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}
+
+cleanup:
+
+	magma_free_cpu( h_info );
+
+	magma_free( d_A );
+	magma_free( d_B );
+	magma_free( dipiv );
+
+	magma_free( dinfo_array );
+	magma_free( dA_array );
+	magma_free( dB_array );
+	magma_free( dipiv_array );
+
+	if(resCode != 0){
+		h_X = NULL;
+	}
+
+	return resCode;
 }
 
 #define NOTRANSF 111
