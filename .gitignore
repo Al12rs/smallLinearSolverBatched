@@ -2,3 +2,4 @@
 *.o
 nsightbuilddata
 /Release/linearSolverBatchedLinux
+/Debug/linearSolverBatchedLinux
