@@ -90,7 +90,7 @@ int main(int argc, char **argv)
     //float tol = opts.tolerance; //* lapackf77_slamch("E");
 
     nrhs = 1;
-    batchCount = 100;
+    batchCount = 1000000;
 
     curandGenerator_t hostRandGenerator;
     curandCreateGeneratorHost(&hostRandGenerator, CURAND_RNG_PSEUDO_DEFAULT);
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     printf("%%============================================================================================\n");
     for( int itest = 0; itest < 1; ++itest ) {
         for( int iter = 0; iter < 1; ++iter ) {
-            N = 32;
+            N = 2;
             lda    = N;
             ldb    = lda;
             ldda   = magma_roundup( N, 32 );  // multiple of 32 by default
