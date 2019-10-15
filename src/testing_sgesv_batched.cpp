@@ -23,7 +23,6 @@
 #include "flops.h"
 
 
-
 /*
    -- MAGMA (version 2.5.1) --
    Univ. of Tennessee, Knoxville
@@ -58,10 +57,41 @@
 
 #endif
 
+
+
+int main(int argc, char **argv)
+{
+    int N, batchCount, sizeA, sizeB, result;
+    float *h_A, *h_B, *h_X;
+    
+    N = 2;
+    batchCount = 1000;
+
+    sizeA = N * N * batchCount;
+	sizeB = N * 1 * batchCount;
+
+    //Allocate A and B matrices
+    TESTING_CHECK( magma_smalloc_cpu( &h_A, sizeA ));
+    TESTING_CHECK( magma_smalloc_cpu( &h_B, sizeB ));
+    TESTING_CHECK( magma_smalloc_cpu( &h_X, sizeB ));
+
+    curandGenerator_t hostRandGenerator;
+    curandCreateGeneratorHost(&hostRandGenerator, CURAND_RNG_PSEUDO_DEFAULT);
+
+    /* Initialize the matrices */
+    curandGenerateUniform(hostRandGenerator, h_A, sizeA);
+    curandGenerateUniform(hostRandGenerator, h_B, sizeB);
+
+    result = gpuLinearSolverBatched(N, &h_A, &h_B, &h_X, batchCount);
+    printf("Batched Solveoperation finished with exit code: %f", result);
+	return result;
+}
+
+
 /* ////////////////////////////////////////////////////////////////////////////
    -- Testing sgesv_batched
 */
-int main(int argc, char **argv)
+int mainOld(int argc, char **argv)
 {
     magma_init();
     //magma_print_environment();
