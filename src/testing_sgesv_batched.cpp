@@ -57,15 +57,10 @@
 
 #endif
 
-
-
-int main(int argc, char **argv)
+int gpuLinearSolverBatched_tester(int N, int batchCount) 
 {
-    int N, batchCount, sizeA, sizeB, result;
+    int sizeA, sizeB, result;
     float *h_A, *h_B, *h_X;
-    
-    N = 2;
-    batchCount = 1000;
 
     sizeA = N * N * batchCount;
 	sizeB = N * 1 * batchCount;
@@ -85,6 +80,17 @@ int main(int argc, char **argv)
     result = gpuLinearSolverBatched(N, &h_A, &h_B, &h_X, batchCount);
     printf("Batched Solveoperation finished with exit code: %f", result);
 	return result;
+}
+
+int main(int argc, char **argv)
+{
+    int N, batchCount, sizeA, sizeB, result;
+    float *h_A, *h_B, *h_X;
+    
+    N = 2;
+    batchCount = 1000;
+
+    return gpuLinearSolverBatched_tester(N, batchCount);
 }
 
 
