@@ -198,7 +198,7 @@ cleanup:
 	if(resCode != 0){
 		h_X = NULL;
 	}
-
+	magma_finalize();
 	return resCode;
 }
 
