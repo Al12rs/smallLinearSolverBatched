@@ -7,7 +7,9 @@
 #if __cplusplus
 extern "C" {
 #endif
-
+    int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
+		float **h_X, int batchCount);
+        
     int linearDecompSLU_batched(
         int m, int n,
         float** dA_array,
