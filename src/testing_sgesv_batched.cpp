@@ -77,18 +77,21 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     curandGenerateUniform(hostRandGenerator, h_A, sizeA);
     curandGenerateUniform(hostRandGenerator, h_B, sizeB);
 
-    result = gpuLinearSolverBatched(N, &h_A, &h_B, &h_X, batchCount);
-    printf("Batched Solveoperation finished with exit code: %f", result);
+    result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, batchCount);
+    printf("Batched Solve operation finished with exit code: %d\n", result);
+
+    magma_free_cpu( h_A );
+    magma_free_cpu( h_B );
+    magma_free_cpu( h_X );
 	return result;
 }
 
 int main(int argc, char **argv)
 {
-    int N, batchCount, sizeA, sizeB, result;
-    float *h_A, *h_B, *h_X;
+    int N, batchCount;
     
     N = 2;
-    batchCount = 1000;
+    batchCount = 100;
 
     return gpuLinearSolverBatched_tester(N, batchCount);
 }
@@ -158,7 +161,7 @@ int mainOld(int argc, char **argv)
             TESTING_CHECK( magma_imalloc_cpu( &ipiv, batchCount*N ));
             TESTING_CHECK( magma_imalloc_cpu( &cpu_info, batchCount ));
             
-            TESTING_CHECK( magma_smalloc( &d_A, ldda*N*batchCount    ));
+            TESTING_CHECK( magma_smalloc( &d_A, ldda*N*batchCount ));
             TESTING_CHECK( magma_smalloc( &d_B, lddb*nrhs*batchCount ));
             TESTING_CHECK( magma_imalloc( &dipiv, N * batchCount ));
             TESTING_CHECK( magma_imalloc( &dinfo_array, batchCount ));

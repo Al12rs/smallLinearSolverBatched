@@ -31,45 +31,43 @@
  n       INTEGER
  The order of the matrix A.  N >= 0.
 
- @param[in,out]
+ @param[in]
  h_A     Sequential host allocated memory containing the A matrices to be
  factorized.
  On entry, it's expected to be of length n*n*batchCount*sizeof(float)
  and stored in column-major format.
- On exit, the factors L and U from the factorization
- A = P*L*U; the unit diagonal elements of L are not stored.
 
- @param[in,out]
+
+ @param[in]
  h_B   Array of pointers, dimension (batchCount).
- Each is a REAL array on the GPU, dimension (LDDB,N).
+ Each is a REAL array on the CPU, dimension (1,N).
  On entry, each pointer is an right hand side matrix B.
- On exit, each pointer is the solution matrix X.
 
  @param[out]
  h_x   Array of pointers, dimension (batchCount).
- Each is a REAL array on the GPU, dimension (LDDB,N).
- On entry, each pointer is an right hand side matrix B.
- On exit, each pointer is the solution matrix X.
-
+ This is expeted to be aleready allocated upon entry.
+ Each is a REAL array on the CPU, dimension (1,N).
+ On exit, if successful, each pointer is the solution matrix X.
 
  @param[in]
  batchCount  INTEGER
  The number of matrices to operate on.
 
  *******************************************************************************/
-extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
-		float **h_X, int batchCount) {
+int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
+		float** h_Xptr, int batchCount) {
 
 	magma_int_t N, nrhs, lda, ldb, ldda, lddb, info, sizeA, sizeB;
 	magmaFloat_ptr d_A, d_B;
 	magma_int_t *dipiv, *dinfo_array;
-    magma_int_t *h_info;
+    int *h_info;
 	float **dA_array = NULL;
     float **dB_array = NULL;
 	magma_int_t **dipiv_array = NULL;
 	const int numStreams = 3;
     cudaStream_t cuda_stream[numStreams];
 	magma_int_t resCode = ERR_SUCCESS;
+	cublasHandle_t cublasHandle;
 
 	N = n;
 	//number of right hand sides columns, for this case 1.
@@ -81,6 +79,8 @@ extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
 	sizeA = lda * N * batchCount;
 	sizeB = ldb * nrhs * batchCount;
 
+	//Initializa cublas library
+	cublasCreate(&cublasHandle);
 	//Query device info and set up.
 	magma_init();
 
@@ -89,9 +89,7 @@ extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
         cudaStreamCreate(&cuda_stream[i]);
     }
 
-	//Allocate host memory for result;
-	resCode = magma_smalloc_cpu( h_X, sizeB);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	//Allocate host memory for result report;
     resCode = magma_imalloc_cpu( &h_info, batchCount);
 	if (resCode != ERR_SUCCESS) {goto cleanup;}
 
@@ -117,7 +115,7 @@ extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
 
 	//Copy matrices A to device using stream[0]
 	resCode = cublasSetMatrixAsync(
-                int(N), int(N*batchCount), sizeof(float),
+                int(N), int(N)*batchCount, sizeof(float),
                 h_A, int(lda),
                 d_A, int(ldda), 
 				cuda_stream[0]);
@@ -125,7 +123,7 @@ extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
 
 	//Copy matrices B to device using stream[1] so it's concurrent to A.
 	resCode = cublasSetMatrixAsync(
-                int(N), int(nrhs * batchCount), sizeof(float),
+                int(N), int(nrhs) * batchCount, sizeof(float),
                 h_B, int(ldb),
                 d_B, int(lddb), 
 				cuda_stream[1]);
@@ -158,12 +156,12 @@ extern "C" int gpuLinearSolverBatched(int n, float **h_A, float **h_B,
 
 	//Copy solution vector x to host
 	resCode = cublasGetMatrixAsync(
-                int(N), int(nrhs *batchCount), sizeof(float),
+                int(N), int(nrhs) *batchCount, sizeof(float),
                 d_B, int(lddb),
-                h_X, int(ldb), cuda_stream[1]);
+                *h_Xptr, int(ldb), cuda_stream[1]);
 	if (resCode != ERR_SUCCESS) {goto cleanup;}
 
-	//Chech for reported errors
+	//Check for reported errors
     resCode = cudaStreamSynchronize(cuda_stream[0]);
 	if (resCode != ERR_SUCCESS) {goto cleanup;}
     for (int i=0; i < batchCount; i++)
@@ -195,9 +193,9 @@ cleanup:
 	magma_free( dB_array );
 	magma_free( dipiv_array );
 
-	if(resCode != 0){
-		h_X = NULL;
-	}
+	cublasDestroy(cublasHandle);
+	magma_finalize();
+
 	magma_finalize();
 	return resCode;
 }
@@ -319,10 +317,10 @@ extern "C" int linearSolverSLU_batched(int n, int nrhs, float **dA_array,
 	}
 
 	// TODO: clean this
-//#define CHECK_INFO
+#define CHECK_INFO
 #ifdef CHECK_INFO
 	// check correctness of results throught "dinfo_magma" and correctness of argument throught "info"
-	magma_int_t* cpu_info = NULL;
+	int* cpu_info = NULL;
 	magma_imalloc_cpu(&cpu_info, batchCount);
 	cublasGetVectorAsync(
 			int(batchCount), sizeof(int),
@@ -330,10 +328,10 @@ extern "C" int linearSolverSLU_batched(int n, int nrhs, float **dA_array,
 			cpu_info, 1, NULL);
 	cudaStreamSynchronize(NULL);
 	//magma_getvector(batchCount, sizeof(magma_int_t), dinfo_array, 1, cpu_info, 1);
-	for (magma_int_t i = 0; i < batchCount; i++)
+	for (int i = 0; i < batchCount; i++)
 	{
 		if (cpu_info[i] != 0) {
-			printf("magma_sgetrf_batched matrix %lld returned error %lld\n", (long long)i, (long long)cpu_info[i]);
+			//printf("magma_sgetrf_batched matrix %d returned error %d\n", i, cpu_info[i]);
 			info = cpu_info[i];
 			magma_free_cpu(cpu_info);
 			return info;
