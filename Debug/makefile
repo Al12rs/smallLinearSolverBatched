@@ -58,7 +58,7 @@ all: linearSolverBatchedLinux
 linearSolverBatchedLinux: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: NVCC Linker'
-	/usr/local/cuda-10.1/bin/nvcc --cudart static --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37 -link -o  "linearSolverBatchedLinux" $(OBJS) $(USER_OBJS) $(LIBS)
+	nvcc --cudart static --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37 -link -o  "linearSolverBatchedLinux" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
