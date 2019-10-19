@@ -109,22 +109,22 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 
 	//Allocate device memory for A, B and permutation matrices. 
 	resCode = magma_smalloc( &d_A, ldda*N*batchCount);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: d_A malloc\n"); goto cleanup;}
     resCode = magma_smalloc( &d_B, lddb*nrhs*batchCount);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: d_B malloc\n"); goto cleanup;}
     resCode = magma_imalloc( &dipiv, N * batchCount);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: dipiv malloc\n"); goto cleanup;}
 	//the success result array
     resCode = magma_imalloc( &dinfo_array, batchCount);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: dinfo_array malloc\n"); goto cleanup;}
 
 	//Allocate the array of pointers to the actual sequential memory
 	resCode = magma_malloc( (void**) &dA_array, batchCount * sizeof(float*) );
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: dA_array malloc\n"); goto cleanup;}
     resCode = magma_malloc( (void**) &dB_array,    batchCount * sizeof(float*) );
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: db_array malloc\n"); goto cleanup;}
     resCode = magma_malloc( (void**) &dipiv_array, batchCount * sizeof(magma_int_t*) );
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: dipiv_array malloc\n"); goto cleanup;}
 
 	//Copy matrices A to device using stream[0]
 	resCode = cublasSetMatrixAsync(
@@ -132,7 +132,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
                 h_A, int(lda),
                 d_A, int(ldda), 
 				cuda_stream[0]);
-	//if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: A copy\n"); goto cleanup;}
 
 	//Copy matrices B to device using stream[1] so it's concurrent to A.
 	resCode = cublasSetMatrixAsync(
@@ -140,7 +140,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
                 h_B, int(ldb),
                 d_B, int(lddb), 
 				cuda_stream[1]);
-	//if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: B copy\n"); goto cleanup;}
 
 	//Convert consecutive values into array of values with size ldda*N
 	magma_iset_pointer(dipiv_array, dipiv, 1, 0, 0, N, batchCount, cuda_stream[2]);
@@ -149,11 +149,11 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 
 	//Sync the parallel streams into one for the main function call.
 	resCode = cudaStreamSynchronize(cuda_stream[0]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
     resCode = cudaStreamSynchronize(cuda_stream[1]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
     resCode = cudaStreamSynchronize(cuda_stream[2]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
 
 	//Perform solution on Device
     info = linearSolverSLU_batched(N, nrhs, dA_array, ldda, 
@@ -165,36 +165,38 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
                 int(batchCount), sizeof(int),
                 dinfo_array, 1,
                 h_info, 1, cuda_stream[0]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: cublasGetVectorAsync dinfo_array\n"); goto cleanup;}
 
 	//Copy solution vector x to host
 	resCode = cublasGetMatrixAsync(
                 int(N), int(nrhs) *batchCount, sizeof(float),
                 d_B, int(lddb),
                 *h_Xptr, int(ldb), cuda_stream[1]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: cublasGetMatrixAsync d_X\n"); goto cleanup;}
 
 	//Check for reported errors
     resCode = cudaStreamSynchronize(cuda_stream[0]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
     for (int i=0; i < batchCount; i++)
     {
     	if (h_info[i] != 0 ) {
 			resCode = h_info[i];
+			printf("Error in: h_info[%d]: %d\n", i, resCode); 
             goto cleanup;
         }
     }
     if (info != 0) {
 		resCode = info;
+		printf("Error in: linearSolverSLU_batched\n"); 
         goto cleanup;
     }
 
 	//Verify copy finished before cleanup.
     resCode = cudaStreamSynchronize(cuda_stream[1]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
 
 cleanup:
-
+	printf("Starting cleanup with code: %d\n", resCode); 
 	magma_free_cpu( h_info );
 
 	magma_free( d_A );
