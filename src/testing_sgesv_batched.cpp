@@ -90,8 +90,8 @@ int main(int argc, char **argv)
 {
     int N, batchCount;
     
-    N = 2;
-    batchCount = 100;
+    N = 32;
+    batchCount = 1000000;
 
     return gpuLinearSolverBatched_tester(N, batchCount);
 }

@@ -9,6 +9,14 @@
 #ifndef ERR_SUCCESS
 #define ERR_SUCCESS 0
 #endif
+
+//ACTIVATE_PROFILER enables profiling of the library, comment out definition to disable.
+#define ACTIVATE_PROFILER
+
+#ifdef ACTIVATE_PROFILER
+#include "cuda_profiler_api.h"
+#endif
+
 /***************************************************************************//**
  Purpose
  -------
@@ -79,8 +87,13 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	sizeA = lda * N * batchCount;
 	sizeB = ldb * nrhs * batchCount;
 
+	#ifdef ACTIVATE_PROFILER
+	cudaProfilerStart();
+	#endif
+
+
 	//Initializa cublas library
-	cublasCreate(&cublasHandle);
+	//cublasCreate(&cublasHandle);
 	//Query device info and set up.
 	magma_init();
 
@@ -119,7 +132,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
                 h_A, int(lda),
                 d_A, int(ldda), 
 				cuda_stream[0]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	//if (resCode != ERR_SUCCESS) {goto cleanup;}
 
 	//Copy matrices B to device using stream[1] so it's concurrent to A.
 	resCode = cublasSetMatrixAsync(
@@ -127,7 +140,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
                 h_B, int(ldb),
                 d_B, int(lddb), 
 				cuda_stream[1]);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+	//if (resCode != ERR_SUCCESS) {goto cleanup;}
 
 	//Convert consecutive values into array of values with size ldda*N
 	magma_iset_pointer(dipiv_array, dipiv, 1, 0, 0, N, batchCount, cuda_stream[2]);
@@ -193,10 +206,14 @@ cleanup:
 	magma_free( dB_array );
 	magma_free( dipiv_array );
 
-	cublasDestroy(cublasHandle);
-	magma_finalize();
+	//cublasDestroy(cublasHandle);
 
 	magma_finalize();
+
+	#ifdef ACTIVATE_PROFILER
+	cudaProfilerStop();
+	#endif
+
 	return resCode;
 }
 
@@ -317,7 +334,7 @@ extern "C" int linearSolverSLU_batched(int n, int nrhs, float **dA_array,
 	}
 
 	// TODO: clean this
-#define CHECK_INFO
+//#define CHECK_INFO
 #ifdef CHECK_INFO
 	// check correctness of results throught "dinfo_magma" and correctness of argument throught "info"
 	int* cpu_info = NULL;
