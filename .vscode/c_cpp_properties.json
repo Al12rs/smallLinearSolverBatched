@@ -4,18 +4,19 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/local/cuda-10.1/targets/x86_64-linux/include",
-                "/usr/include/c++/8",
-                "/usr/include/x86_64-linux-gnu/c++/8",
-                "/usr/include/c++/8/backward",
-                "/usr/lib/gcc/x86_64-linux-gnu/8/include",
+                "/cineca/prod/opt/compilers/cuda/10.0/none/include",
                 "/usr/local/include",
-                "/usr/lib/gcc/x86_64-linux-gnu/8/include-fixed",
-                "/usr/include/x86_64-linux-gnu",
-                "/usr/include"
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/include",
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/include-fixed",
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/../../include",
+                "/usr/include",
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/../../../../include/c++/6.1.0",
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/../../../../include/c++/6.1.0/x86_64-pc-linux-gnu",
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/../../../../include/c++/6.1.0/backward",
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/include"
             ],
             "defines": [],
-            "compilerPath": "/usr/local/cuda-10.1/bin/nvcc",
+            "compilerPath": "/cineca/prod/opt/compilers/cuda/10.0/none/bin/nvcc",
             "cStandard": "c99",
             "cppStandard": "c++11"
         }
