@@ -17,7 +17,7 @@
 #include "cuda_profiler_api.h"
 #endif
 
-/***************************************************************************//**
+/***************************************************************************/ /**
  Purpose
  -------
  Solves a system of linear equations
@@ -57,18 +57,24 @@
  Each is a REAL array on the CPU, dimension (1,N).
  On exit, if successful, each pointer is the solution matrix X.
 
+  @param[out]
+ h_info   Array of integers, dimension (batchCount).
+ This is expeted to be aleready allocated upon entry.
+ upon exit this contains the success/failure result 
+ of decomposition for each linear system.
+ 
+
  @param[in]
  batchCount  INTEGER
  The number of matrices to operate on.
 
  *******************************************************************************/
 int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
-		float** h_Xptr, int batchCount) {
+		float** h_Xptr, int *h_info, int batchCount) {
 
 	magma_int_t N, nrhs, lda, ldb, ldda, lddb, info, sizeA, sizeB;
 	magmaFloat_ptr d_A, d_B;
 	magma_int_t *dipiv, *dinfo_array;
-    int *h_info;
 	float **dA_array = NULL;
     float **dB_array = NULL;
 	magma_int_t **dipiv_array = NULL;
@@ -103,8 +109,8 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
     }
 
 	//Allocate host memory for result report;
-    resCode = magma_imalloc_cpu( &h_info, batchCount);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}
+    /*resCode = magma_imalloc_cpu( &h_info, batchCount);
+	if (resCode != ERR_SUCCESS) {goto cleanup;}*/
 
 
 	//Allocate device memory for A, B and permutation matrices. 
@@ -197,7 +203,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 
 cleanup:
 	printf("Starting cleanup with code: %d\n", resCode); 
-	magma_free_cpu( h_info );
+	//magma_free_cpu( h_info );
 
 	magma_free( d_A );
 	magma_free( d_B );

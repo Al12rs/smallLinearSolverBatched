@@ -4,9 +4,9 @@
 #include <cuda_runtime.h>
 #include "magma_types.h"
 
-
 int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
-		float **h_X, int batchCount);
+                           float **h_X,
+                           int *h_info, int batchCount);
 
 #if __cplusplus
 extern "C" {

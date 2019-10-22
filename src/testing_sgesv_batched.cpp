@@ -61,6 +61,7 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
 {
     int sizeA, sizeB, result;
     float *h_A, *h_B, *h_X;
+    int *h_info;
 
     sizeA = N * N * batchCount;
 	sizeB = N * 1 * batchCount;
@@ -69,6 +70,7 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     TESTING_CHECK( magma_smalloc_cpu( &h_A, sizeA ));
     TESTING_CHECK( magma_smalloc_cpu( &h_B, sizeB ));
     TESTING_CHECK( magma_smalloc_cpu( &h_X, sizeB ));
+    TESTING_CHECK( magma_imalloc_cpu( &h_info, batchCount));
 
     curandGenerator_t hostRandGenerator;
     curandCreateGeneratorHost(&hostRandGenerator, CURAND_RNG_PSEUDO_DEFAULT);
@@ -78,14 +80,14 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     curandGenerateUniform(hostRandGenerator, h_B, sizeB);
 
     clock_t begin = clock();
-    result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, batchCount);
+    result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, time_spent);
 
     //Second run test, this seems to perform much better, needs investigation
     begin = clock();
-    result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, batchCount);
+    result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
     end = clock();
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, time_spent);
@@ -93,7 +95,8 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     magma_free_cpu( h_A );
     magma_free_cpu( h_B );
     magma_free_cpu( h_X );
-	return result;
+    magma_free_cpu(h_info);
+    return result;
 }
 
 int main(int argc, char **argv)
