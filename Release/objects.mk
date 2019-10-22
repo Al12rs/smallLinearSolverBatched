@@ -4,5 +4,5 @@
 
 USER_OBJS :=
 
-LIBS := -lcublas -lcurand
+LIBS := -lcublas_static -lculibos -lcurand
 
