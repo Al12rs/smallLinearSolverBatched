@@ -58,4 +58,5 @@ src/%.o: ../src/%.cu
 	@echo 'Finished building: $<'
 	@echo ' '
 
-
+#lapack
+#--include-path /cineca/prod/opt/libraries/lapack/3.8.0/intel--pe-xe-2018--binary/include/

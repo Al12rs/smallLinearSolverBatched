@@ -13,7 +13,8 @@
                 "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/../../../../include/c++/6.1.0",
                 "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/../../../../include/c++/6.1.0/x86_64-pc-linux-gnu",
                 "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/../../../../include/c++/6.1.0/backward",
-                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/include"
+                "/galileo/prod/opt/compilers/gnu/6.1.0/none/bin/../lib/gcc/x86_64-pc-linux-gnu/6.1.0/include",
+                "/cineca/prod/opt/libraries/lapack/3.8.0/intel--pe-xe-2018--binary/include/"
             ],
             "defines": [],
             "compilerPath": "/cineca/prod/opt/compilers/cuda/10.0/none/bin/nvcc",
