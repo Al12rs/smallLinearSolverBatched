@@ -74,8 +74,8 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     curandCreateGeneratorHost(&hostRandGenerator, CURAND_RNG_PSEUDO_DEFAULT);
 
     /* Initialize the matrices */
-    curandGenerateUniform(hostRandGenerator, h_A, sizeA);
-    curandGenerateUniform(hostRandGenerator, h_B, sizeB);
+    curandGenerateNormal(hostRandGenerator, h_A, sizeA, (float)0, (float)1);
+    curandGenerateNormal(hostRandGenerator, h_B, sizeB, (float)0, (float)1);
 
     //First run test, this seems slower, possibly due to library loading
     clock_t begin = clock();
