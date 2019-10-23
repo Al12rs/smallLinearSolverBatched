@@ -11,7 +11,7 @@
 #include <cuda_runtime.h>
 #include <curand.h>
 #include <cublas_v2.h>
-//#include <lapacke.h>
+#include <lapacke.h>
 //#include <cusolverDn.h>
 #include "utils.h"
 #include "operation_batched.h"
@@ -24,6 +24,22 @@
 #include "../control/magma_threadsetting.h" // internal header
 #endif
 
+int gpuLinearSolverBatched_tester(int N, int batchCount);
+
+int main(int argc, char **argv)
+{
+    int N, batchCount;
+    if (argc != 3){
+        printf("Usage: linearSolverBatched <linear system size> <number of systems>\n");
+        return 0;
+    }
+    else {
+        N = atoi(argv[1]);
+        batchCount = atoi(argv[2]);
+        printf("Performing Solve test with N=%d, and batchCount=%d\n", N, batchCount);
+        return gpuLinearSolverBatched_tester(N, batchCount);
+    }
+}
 
 int gpuLinearSolverBatched_tester(int N, int batchCount)
 {
@@ -61,7 +77,7 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, time_spent);
 
-//#define LAPACK_PERFORMANCE
+#define LAPACK_PERFORMANCE
 #ifdef LAPACK_PERFORMANCE
     /* ====================================================================
                Performs operation using LAPACK
@@ -133,13 +149,5 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     return result;
 }
 
-int main(int argc, char **argv)
-{
-    int N, batchCount;
 
-    N = 32;
-    batchCount = 128 * 1024;
-
-    return gpuLinearSolverBatched_tester(N, batchCount);
-}
 
