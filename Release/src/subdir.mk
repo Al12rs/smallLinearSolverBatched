@@ -45,16 +45,16 @@ CPP_DEPS += \
 src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: NVCC Compiler'
-	nvcc -O3 -gencode arch=compute_37,code=sm_37  -odir "src" -M -o "$(@:%.o=%.d)" "$<"
-	nvcc -O3 --compile  -x c++ -o  "$@" "$<"
+	nvcc -O3 -gencode arch=compute_37,code=sm_37 --include-path /cineca/prod/opt/libraries/lapack/3.8.0/intel--pe-xe-2018--binary/include/ -odir "src" -M -o "$(@:%.o=%.d)" "$<"
+	nvcc -O3 --compile --include-path /cineca/prod/opt/libraries/lapack/3.8.0/intel--pe-xe-2018--binary/include/ -x c++ -o  "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
 src/%.o: ../src/%.cu
 	@echo 'Building file: $<'
 	@echo 'Invoking: NVCC Compiler'
-	nvcc -O3 -gencode arch=compute_37,code=sm_37  -odir "src" -M -o "$(@:%.o=%.d)" "$<"
-	nvcc -O3 --compile --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37  -x cu -o  "$@" "$<"
+	nvcc -O3 -gencode arch=compute_37,code=sm_37 --include-path /cineca/prod/opt/libraries/lapack/3.8.0/intel--pe-xe-2018--binary/include/ -odir "src" -M -o "$(@:%.o=%.d)" "$<"
+	nvcc -O3 --compile --include-path /cineca/prod/opt/libraries/lapack/3.8.0/intel--pe-xe-2018--binary/include/ --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37  -x cu -o  "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
