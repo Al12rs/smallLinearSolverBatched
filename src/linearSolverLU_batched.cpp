@@ -81,7 +81,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	const int numStreams = 3;
     cudaStream_t cuda_stream[numStreams];
 	magma_int_t resCode = ERR_SUCCESS;
-	cublasHandle_t cublasHandle;
+	//cublasHandle_t cublasHandle;
 
 	N = n;
 	//number of right hand sides columns, for this case 1.
@@ -133,6 +133,13 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	if (resCode != ERR_SUCCESS) {printf("Error in: dipiv_array malloc\n"); goto cleanup;}
 
 	//Copy matrices A to device using stream[0]
+	/*cudaMemcpy2DAsync(d_A, int(ldda * sizeof(float)),
+					  h_A, int(N * sizeof(float)),
+					  int(N * sizeof(float)),
+					  int(N) * batchCount,
+					  cudaMemcpyHostToDevice,
+					  cuda_stream[0]);*/
+
 	resCode = cublasSetMatrixAsync(
                 int(N), int(N)*batchCount, sizeof(float),
                 h_A, int(lda),

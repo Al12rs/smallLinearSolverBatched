@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <cuda_runtime.h>
 #include <curand.h>
-#include <cublas_v2.h>
+//#include <cublas_v2.h>
 #include <lapacke.h>
 //#include <cusolverDn.h>
 #include "utils.h"
@@ -37,7 +37,12 @@ int main(int argc, char **argv)
         N = atoi(argv[1]);
         batchCount = atoi(argv[2]);
         printf("Performing Solve test with N=%d, and batchCount=%d\n", N, batchCount);
-        return gpuLinearSolverBatched_tester(N, batchCount);
+        //test to see if cublas initialization is slowing down later
+        //cublasHandle_t handle;
+        //cublasCreate(&handle);
+        gpuLinearSolverBatched_tester(N, batchCount);
+        //cublasDestroy(handle);
+        return 0;
     }
 }
 

@@ -64,7 +64,7 @@ typedef double real_Double_t;
     #include <cublas_v2.h>
     #endif
 
-    #include <cusparse_v2.h>
+    //#include <cusparse_v2.h>
 
     #ifdef __cplusplus
     extern "C" {
@@ -89,9 +89,9 @@ typedef double real_Double_t;
     typedef cuDoubleComplex magmaDoubleComplex;
     typedef cuFloatComplex  magmaFloatComplex;
 
-    cudaStream_t     magma_queue_get_cuda_stream    ( magma_queue_t queue );
-    cublasHandle_t   magma_queue_get_cublas_handle  ( magma_queue_t queue );
-    cusparseHandle_t magma_queue_get_cusparse_handle( magma_queue_t queue );
+    //cudaStream_t     magma_queue_get_cuda_stream    ( magma_queue_t queue );
+    //cublasHandle_t   magma_queue_get_cublas_handle  ( magma_queue_t queue );
+    //cusparseHandle_t magma_queue_get_cusparse_handle( magma_queue_t queue );
 
     /// @addtogroup magma_complex
     /// @{
