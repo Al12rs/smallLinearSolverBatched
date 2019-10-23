@@ -143,21 +143,7 @@ linearSolverFactorizedSLU_batched(
     magma_slaswp_rowserial_batched(nrhs, dB_array, lddb, 1, n, dipiv_array, batchCount, queue);
 
     if (nrhs > 1) {
-        /*
-        // solve dwork = L^-1 * NRHS
-        magmablas_strsm_batched(MagmaLeft, MagmaLower, MagmaNoTrans, MagmaUnit,
-            n, nrhs, MAGMA_S_ONE,
-            dA_array, ldda,
-            dB_array, lddb,
-            batchCount, queue);
-
-        // solve X = U^-1 * dwork
-        magmablas_strsm_batched(MagmaLeft, MagmaUpper, MagmaNoTrans, MagmaNonUnit,
-            n, nrhs, MAGMA_S_ONE,
-            dA_array, ldda,
-            dB_array, lddb,
-            batchCount, queue);
-        /**/
+        printf("unhandled code path: nrhs != 1\n");
     }
     else {
         // solve dwork = L^-1 * 1
@@ -176,7 +162,6 @@ linearSolverFactorizedSLU_batched(
             dB_array,    // dX //output
             batchCount, queue, 0);
     }
-
 
     magma_queue_sync(queue);
 

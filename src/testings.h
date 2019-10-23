@@ -237,20 +237,4 @@ public:
 
 extern const char* g_platform_str;
 
-// -----------------------------------------------------------------------------
-/*
-template< typename FloatT >
-void magma_generate_matrix(
-    magma_opts& opts,
-    Matrix< FloatT >& A,
-    Vector< typename blas::traits<FloatT>::real_t >& sigma );
-
-template< typename FloatT >
-void magma_generate_matrix(
-    magma_opts& opts,
-    magma_int_t m, magma_int_t n,
-    FloatT* A, magma_int_t lda,
-    typename blas::traits<FloatT>::real_t* sigma=nullptr );
-*/
-
 #endif /* TESTINGS_H */
