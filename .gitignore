@@ -3,3 +3,4 @@
 nsightbuilddata
 /Release/linearSolverBatchedLinux
 /Debug/linearSolverBatchedLinux
+*.prof
