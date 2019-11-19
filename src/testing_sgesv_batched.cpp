@@ -20,35 +20,46 @@
 #include "cuda_profiler_api.h"
 
 
-
+//#define _OPENMP
+//#define OMP_NUM_THREADS = 2
 #if defined(_OPENMP)
 #include <omp.h>
-#include "../control/magma_threadsetting.h" // internal header
+//#include "../control/magma_threadsetting.h" // internal header
 #endif
 
-int gpuLinearSolverBatched_tester(int N, int batchCount);
+int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads);
 
 int main(int argc, char **argv)
 {
-    int N, batchCount;
-    if (argc != 3){
+    int N, batchCount, numThreads;
+    if (argc != 4){
         printf("Usage: linearSolverBatched <linear system size> <number of systems>\n");
         return 0;
     }
     else {
         N = atoi(argv[1]);
         batchCount = atoi(argv[2]);
+        numThreads = atoi(argv[3]);
         printf("Performing Solve test with N=%d, and batchCount=%d\n", N, batchCount);
         //test to see if cublas initialization is slowing down later
         cublasHandle_t handle;
         cublasCreate(&handle);
-        gpuLinearSolverBatched_tester(N, batchCount);
+        gpuLinearSolverBatched_tester(N, batchCount, numThreads);
         cublasDestroy(handle);
         return 0;
     }
 }
 
-int gpuLinearSolverBatched_tester(int N, int batchCount)
+#if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
+int omp_thread_count() {
+    int n = 0;
+    #pragma omp parallel reduction(+:n)
+    n += 1;
+    return n;
+}
+#endif
+
+int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
 {
     int sizeA, sizeB, result;
     float *h_A, *h_B, *h_X;
@@ -72,18 +83,18 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
 
     //First run test, this seems slower, possibly due to library loading
     clock_t begin = clock();
-    cudaProfilerStart();
+    //cudaProfilerStart();
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
-    cudaProfilerStop();
+    //cudaProfilerStop();
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, time_spent);
 
     //Second run test, this seems to perform much better, needs investigation
     begin = clock();
-    cudaProfilerStart();
+    //cudaProfilerStart();
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
-    cudaProfilerStop();
+    //cudaProfilerStop();
     end = clock();
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, time_spent);
@@ -100,13 +111,17 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     int ldb = N;
     int *ipiv;
     TESTING_CHECK(magma_imalloc_cpu(&ipiv, batchCount * N));
-// #define BATCHED_DISABLE_PARCPU
+
+#if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
+    //omp_set_num_threads(numThreads);
+    int oldNumThreads = omp_thread_count();
+    printf("OMP threads: %d\n",oldNumThreads );
+#endif
+
     cpu_time = clock();
 #if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
-    magma_int_t nthreads = magma_get_lapack_numthreads();
-    magma_set_lapack_numthreads(1);
-    magma_set_omp_numthreads(nthreads);
-#pragma omp parallel for schedule(dynamic)
+//schedule(dynamic)
+#pragma omp parallel for 
 #endif
     for (magma_int_t s = 0; s < batchCount; s++)
     {
@@ -118,10 +133,6 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
                    (long long)s, (long long)locinfo, "magma_strerror(locinfo)");
         }
     }
-#if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
-    magma_set_lapack_numthreads(nthreads);
-#endif
-
     cpu_time = (double)(clock() - cpu_time)/CLOCKS_PER_SEC;
     printf("lapack computation finished in: %f\n", cpu_time);
     //cpu_perf = gflops / cpu_time;
@@ -129,9 +140,6 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
     // #define BATCHED_DISABLE_PARCPU
     cpu_time = clock();
 #if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
-    magma_int_t nthreads = magma_get_lapack_numthreads();
-    magma_set_lapack_numthreads(1);
-    magma_set_omp_numthreads(nthreads);
 #pragma omp parallel for schedule(dynamic)
 #endif
     for (magma_int_t s = 0; s < batchCount; s++)
@@ -144,11 +152,12 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
                    (long long)s, (long long)locinfo, "magma_strerror(locinfo)");
         }
     }
-#if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
-    magma_set_lapack_numthreads(nthreads);
-#endif
-
+    
     cpu_time = (double)(clock() - cpu_time) / CLOCKS_PER_SEC;
+    
+#if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
+    //omp_set_num_threads(oldNumThreads);
+#endif
     printf("lapack computation finished in: %f\n", cpu_time);
     //cpu_perf = gflops / cpu_time;
     #endif //LAPACK_PERFORMANCE
