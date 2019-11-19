@@ -6,6 +6,7 @@
 #include "testings.h"
 #include "operation_batched.h"
 
+
 #ifndef ERR_SUCCESS
 #define ERR_SUCCESS 0
 #endif
@@ -94,7 +95,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	sizeB = ldb * nrhs * batchCount;
 
 	#ifdef ACTIVATE_PROFILER
-	cudaProfilerStart();
+	//cudaProfilerStart();
 	#endif
 
 
@@ -133,8 +134,8 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	if (resCode != ERR_SUCCESS) {printf("Error in: dipiv_array malloc\n"); goto cleanup;}
 
 	//Copy matrices A to device using stream[0]
-	/*cudaMemcpy2DAsync(d_A, int(ldda * sizeof(float)),
-					  h_A, int(N * sizeof(float)),
+	/*resCode = cudaMemcpy2DAsync(d_A, int(ldda * sizeof(float)),
+					  h_A, int(lda * sizeof(float)),
 					  int(N * sizeof(float)),
 					  int(N) * batchCount,
 					  cudaMemcpyHostToDevice,
@@ -147,7 +148,14 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 				cuda_stream[0]);
 	if (resCode != ERR_SUCCESS) {printf("Error in: A copy\n"); goto cleanup;}
 
-	//Copy matrices B to device using stream[1] so it's concurrent to A.
+	//Copy matrices B to device using stream[1].
+	/*resCode =cudaMemcpy2DAsync(d_B, int(lddb * sizeof(float)),
+					  h_B, int(ldb * sizeof(float)),
+					  int(N * sizeof(float)),
+					  int(nrhs) * batchCount,
+					  cudaMemcpyHostToDevice,
+					  cuda_stream[0]);*/
+
 	resCode = cublasSetMatrixAsync(
                 int(N), int(nrhs) * batchCount, sizeof(float),
                 h_B, int(ldb),
@@ -169,11 +177,15 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
 
 	//Perform solution on Device
-    info = linearSolverSLU_batched(N, nrhs, dA_array, ldda, 
+	info = linearSolverSLU_batched(N, nrhs, dA_array, ldda, 
 								   dipiv_array, dB_array, lddb, 
 								   dinfo_array, batchCount, cuda_stream[0]);
-	
+
+	//Make sure operation completed
+	cudaStreamSynchronize(cuda_stream[0]);
+
 	//Copy success result to host
+	//resCode = cudaMemcpyAsync(h_info,dinfo_array,sizeof(int)*batchCount,cudaMemcpyDeviceToHost, cuda_stream[0]);
 	resCode = cublasGetVectorAsync(
                 int(batchCount), sizeof(int),
                 dinfo_array, 1,
@@ -181,6 +193,13 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	if (resCode != ERR_SUCCESS) {printf("Error in: cublasGetVectorAsync dinfo_array\n"); goto cleanup;}
 
 	//Copy solution vector x to host
+	/*resCode =cudaMemcpy2DAsync(*h_Xptr, int(ldb * sizeof(float)),
+					  d_B, int(lddb * sizeof(float)),
+					  int(N * sizeof(float)),
+					  int(nrhs) * batchCount,
+					  cudaMemcpyDeviceToHost,
+					  cuda_stream[1]);*/
+
 	resCode = cublasGetMatrixAsync(
                 int(N), int(nrhs) *batchCount, sizeof(float),
                 d_B, int(lddb),
@@ -226,7 +245,7 @@ cleanup:
 	magma_finalize();
 
 	#ifdef ACTIVATE_PROFILER
-	cudaProfilerStop();
+	//cudaProfilerStop();
 	#endif
 
 	return resCode;

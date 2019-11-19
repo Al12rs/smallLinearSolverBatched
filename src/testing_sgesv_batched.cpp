@@ -10,13 +10,15 @@
 #include <assert.h>
 #include <cuda_runtime.h>
 #include <curand.h>
-//#include <cublas_v2.h>
+#include <cublas_v2.h>
 #include <lapacke.h>
 //#include <cusolverDn.h>
 #include "utils.h"
 #include "operation_batched.h"
 #include "testings.h"
 #include "flops.h"
+#include "cuda_profiler_api.h"
+
 
 
 #if defined(_OPENMP)
@@ -38,10 +40,10 @@ int main(int argc, char **argv)
         batchCount = atoi(argv[2]);
         printf("Performing Solve test with N=%d, and batchCount=%d\n", N, batchCount);
         //test to see if cublas initialization is slowing down later
-        //cublasHandle_t handle;
-        //cublasCreate(&handle);
+        cublasHandle_t handle;
+        cublasCreate(&handle);
         gpuLinearSolverBatched_tester(N, batchCount);
-        //cublasDestroy(handle);
+        cublasDestroy(handle);
         return 0;
     }
 }
@@ -70,14 +72,18 @@ int gpuLinearSolverBatched_tester(int N, int batchCount)
 
     //First run test, this seems slower, possibly due to library loading
     clock_t begin = clock();
+    cudaProfilerStart();
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
+    cudaProfilerStop();
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, time_spent);
 
     //Second run test, this seems to perform much better, needs investigation
     begin = clock();
+    cudaProfilerStart();
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
+    cudaProfilerStop();
     end = clock();
     time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, time_spent);
