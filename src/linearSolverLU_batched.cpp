@@ -228,7 +228,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
 
 cleanup:
-	printf("Starting cleanup with code: %d\n", resCode); 
+	//printf("Starting cleanup with code: %d\n", resCode); 
 	//magma_free_cpu( h_info );
 
 	magma_free( d_A );
