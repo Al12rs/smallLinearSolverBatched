@@ -21,10 +21,9 @@
 #include "flops.h"
 #include "cuda_profiler_api.h"
 
-
 //#define DISABLE_GPU_TEST
-#define LAPACK_PERFORMANCE
-//#define MANUAL_TEST
+//#define LAPACK_PERFORMANCE
+#define MANUAL_TEST
 //#define BATCHED_DISABLE_PARCPU
 #if defined(_OPENMP)
 #include <omp.h>
@@ -39,7 +38,7 @@ int main(int argc, char **argv)
 {
     int N, batchCount, numThreads;
     if (argc != 4){
-        printf("Usage: linearSolverBatched <linear system size> <number of systems>\n");
+        printf("Usage: linearSolverBatched <linear system size> <number of systems> <number of omp threads>\n");
         return 0;
     }
     else {
@@ -49,6 +48,7 @@ int main(int argc, char **argv)
         int mem = ((N+1)*N*batchCount*sizeof(float) );
         printf("Performing Solve test: N=%d, batchCount=%d, estimated memory usage:%d\n", N, batchCount, mem);
         //test to see if cublas initialization is slowing down later
+        
         cublasHandle_t handle;
         cublasCreate(&handle);
         gpuLinearSolverBatched_tester(N, batchCount, numThreads);
@@ -59,7 +59,17 @@ int main(int argc, char **argv)
 #else
 int main(int argc, char **argv)
 {
+    cublasHandle_t handle;
+
+    // Initialize Cublas even if not strictly necessary, but this
+    // avoids the Cuda runtime initialization overhead later,
+    // during the first test execution.
+    cublasCreate(&handle);
+
+    //Tester
     gpuCSVTester();
+
+    cublasDestroy(handle);
 }
 #endif
 
@@ -91,29 +101,32 @@ int gpuCSVTester()
     fp = fopen("results.csv", "w+");
     fprintf(fp, "#N, #batchCount, #result, #GPUtimeInMs, #CPUtime1InMs, #CPUtime4InMs, #CPUtime8InMs, #CPUtime16InMs, #memMB, #memByte\n");
 
-    for (int i = 0; i < 7; i++)
+    for (int i = 0; i < 8; i++)
     {
         switch (i)
         {
         case 0:
-            batchCount = 10 * 1000;
+            batchCount = 1000;
             break;
         case 1:
-            batchCount = 50 * 1000;
+            batchCount = 10 * 1000;
             break;
         case 2:
-            batchCount = 100 * 1000;
+            batchCount = 50 * 1000;
             break;
         case 3:
-            batchCount = 250 * 1000;
+            batchCount = 100 * 1000;
             break;
         case 4:
-            batchCount = 500 * 1000;
+            batchCount = 250 * 1000;
             break;
         case 5:
-            batchCount = 750 * 1000;
+            batchCount = 500 * 1000;
             break;
         case 6:
+            batchCount = 750 * 1000;
+            break;
+        case 7:
             batchCount = 1000 * 1000;
             break;
         default:
@@ -255,20 +268,19 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     #if !defined(DISABLE_GPU_TEST)
 
     //First run test, this seems slower, possibly due to library loading
-    gettimeofday(&t1, 0);
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
+
     gettimeofday(&t2, 0);
     
     double gpuTime = (1000000.0 * (t2.tv_sec - t1.tv_sec) + t2.tv_usec - t1.tv_usec) / 1000.0;
 
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, gpuTime);
 
+    
     //Second run test, this seems to perform much better, needs investigation
-    //cudaProfilerStart();
     gettimeofday(&t1, 0);
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
     gettimeofday(&t2, 0);
-    //cudaProfilerStop();
 
     gpuTime = (1000000.0 * (t2.tv_sec - t1.tv_sec) + t2.tv_usec - t1.tv_usec) / 1000.0;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, gpuTime);
