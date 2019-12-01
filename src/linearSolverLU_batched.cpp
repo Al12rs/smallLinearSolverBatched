@@ -12,7 +12,7 @@
 #endif
 
 //ACTIVATE_PROFILER enables profiling of the library, comment out definition to disable.
-#define ACTIVATE_PROFILER
+//#define ACTIVATE_PROFILER
 
 #ifdef ACTIVATE_PROFILER
 #include "cuda_profiler_api.h"
@@ -95,7 +95,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	sizeB = ldb * nrhs * batchCount;
 
 	#ifdef ACTIVATE_PROFILER
-	//cudaProfilerStart();
+	cudaProfilerStart();
 	#endif
 
 
@@ -226,6 +226,7 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	//Verify copy finished before cleanup.
     resCode = cudaStreamSynchronize(cuda_stream[1]);
 	if (resCode != ERR_SUCCESS) {printf("Error in: cudaStreamSynchronize\n"); goto cleanup;}
+
 
 cleanup:
 	//printf("Starting cleanup with code: %d\n", resCode); 
