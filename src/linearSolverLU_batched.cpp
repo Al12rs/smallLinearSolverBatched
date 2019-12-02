@@ -11,7 +11,7 @@
 #define ERR_SUCCESS 0
 #endif
 
-//ACTIVATE_PROFILER enables profiling of the library, comment out definition to disable.
+//ACTIVATE_PROFILER enables start/stop profiling directives for nvprof. Comment out definition to disable.
 //#define ACTIVATE_PROFILER
 
 #ifdef ACTIVATE_PROFILER
@@ -98,9 +98,6 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	cudaProfilerStart();
 	#endif
 
-
-	//Initializa cublas library
-	//cublasCreate(&cublasHandle);
 	//Query device info and set up.
 	magma_init();
 
@@ -108,11 +105,6 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 	for (int i = 0; i < numStreams; i++) {
         cudaStreamCreate(&cuda_stream[i]);
     }
-
-	//Allocate host memory for result report;
-    /*resCode = magma_imalloc_cpu( &h_info, batchCount);
-	if (resCode != ERR_SUCCESS) {goto cleanup;}*/
-
 
 	//Allocate device memory for A, B and permutation matrices. 
 	resCode = magma_smalloc( &d_A, ldda*N*batchCount);
@@ -229,9 +221,6 @@ int gpuLinearSolverBatched(int n, float *h_A, float *h_B,
 
 
 cleanup:
-	//printf("Starting cleanup with code: %d\n", resCode); 
-	//magma_free_cpu( h_info );
-
 	magma_free( d_A );
 	magma_free( d_B );
 	magma_free( dipiv );
@@ -240,8 +229,6 @@ cleanup:
 	magma_free( dA_array );
 	magma_free( dB_array );
 	magma_free( dipiv_array );
-
-	//cublasDestroy(cublasHandle);
 
 	magma_finalize();
 
@@ -368,7 +355,6 @@ extern "C" int linearSolverSLU_batched(int n, int nrhs, float **dA_array,
 		return info;
 	}
 
-	// TODO: clean this
 //#define CHECK_INFO
 #ifdef CHECK_INFO
 	// check correctness of results throught "dinfo_magma" and correctness of argument throught "info"

@@ -52,19 +52,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: linearSolverBatchedLinux
+all: gpulinearsolversmallbatched
 
 # Tool invocations
-linearSolverBatchedLinux: $(OBJS) $(USER_OBJS)
+gpulinearsolversmallbatched: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: NVCC Linker'
-	nvcc --cudart static --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37 -link -Xcompiler -fopenmp -o  "linearSolverBatchedLinux" $(OBJS) $(USER_OBJS) $(LIBS)
+	nvcc --cudart static --relocatable-device-code=true -gencode arch=compute_37,code=compute_37 -gencode arch=compute_37,code=sm_37 -link -Xcompiler -fopenmp -o  "gpulinearsolversmallbatched" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(CC_DEPS)$(C++_DEPS)$(EXECUTABLES)$(C_UPPER_DEPS)$(CXX_DEPS)$(OBJS)$(CU_DEPS)$(CPP_DEPS)$(C_DEPS) linearSolverBatchedLinux
+	-$(RM) $(CC_DEPS)$(C++_DEPS)$(EXECUTABLES)$(C_UPPER_DEPS)$(CXX_DEPS)$(OBJS)$(CU_DEPS)$(CPP_DEPS)$(C_DEPS) gpulinearsolversmallbatched
 	-@echo ' '
 
 .PHONY: all clean dependents

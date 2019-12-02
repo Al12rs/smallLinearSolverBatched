@@ -14,20 +14,29 @@
 #include <cublas_v2.h>
 #include <lapacke.h>
 #include <sys/time.h>
-//#include <cusolverDn.h>
 #include "utils.h"
 #include "operation_batched.h"
 #include "testings.h"
 #include "flops.h"
 #include "cuda_profiler_api.h"
 
-//#define DISABLE_GPU_TEST
-//#define LAPACK_PERFORMANCE
+
+// If MANUAL_TEST is defined, the porgram will perform a single test with command line parameters
+// for matrix size, batch count and number of threads.
+// If  MANUAL_TEST is not defined then the automatic tester will execute with the parameters set in gpuCSVTester().
 #define MANUAL_TEST
+
+// Defining DISABLE_GPU_TEST will avoid perormaing GPU solver when using manual mode. This option is ignored in automatic tester mode.
+//#define DISABLE_GPU_TEST
+
+// defining LAPACK_PERFORMANCE enables CPU test in manual mode, as it's normally skipped. This option does not work for 
+// automatic tester as there CPU performance is always tested.
+//#define LAPACK_PERFORMANCE
+
+// Defining BATCHED_DISABLE_PARCPU will disable OMP multithreading directives and block the use of multiple threads for CPU test.
 //#define BATCHED_DISABLE_PARCPU
 #if defined(_OPENMP)
 #include <omp.h>
-//#include "../control/magma_threadsetting.h" // internal header
 #endif
 
 int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads);
@@ -38,7 +47,7 @@ int main(int argc, char **argv)
 {
     int N, batchCount, numThreads;
     if (argc != 4){
-        printf("Usage: linearSolverBatched <linear system size> <number of systems> <number of omp threads>\n");
+        printf("Usage: gpulinearsolversmallbatched <linear system size> <number of systems> <number of omp threads>\n");
         return 0;
     }
     else {
@@ -61,7 +70,7 @@ int main(int argc, char **argv)
 {
     cublasHandle_t handle;
 
-    // Initialize Cublas even if not strictly necessary, but this
+    // Initialize Cublas even if not strictly necessary, but this should
     // avoids the Cuda runtime initialization overhead later,
     // during the first test execution.
     cublasCreate(&handle);
