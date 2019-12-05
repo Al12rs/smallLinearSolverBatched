@@ -20,7 +20,6 @@
 #include "flops.h"
 #include "cuda_profiler_api.h"
 
-
 // If MANUAL_TEST is defined, the porgram will perform a single test with command line parameters
 // for matrix size, batch count and number of threads.
 // If  MANUAL_TEST is not defined then the automatic tester will execute with the parameters set in gpuCSVTester().
@@ -29,7 +28,7 @@
 // Defining DISABLE_GPU_TEST will avoid perormaing GPU solver when using manual mode. This option is ignored in automatic tester mode.
 //#define DISABLE_GPU_TEST
 
-// defining LAPACK_PERFORMANCE enables CPU test in manual mode, as it's normally skipped. This option does not work for 
+// defining LAPACK_PERFORMANCE enables CPU test in manual mode, as it's normally skipped. This option does not work for
 // automatic tester as there CPU performance is always tested.
 //#define LAPACK_PERFORMANCE
 
@@ -46,18 +45,20 @@ int gpuCSVTester();
 int main(int argc, char **argv)
 {
     int N, batchCount, numThreads;
-    if (argc != 4){
+    if (argc != 4)
+    {
         printf("Usage: gpulinearsolversmallbatched <linear system size> <number of systems> <number of omp threads>\n");
         return 0;
     }
-    else {
+    else
+    {
         N = atoi(argv[1]);
         batchCount = atoi(argv[2]);
         numThreads = atoi(argv[3]);
-        int mem = ((N+1)*N*batchCount*sizeof(float) );
+        int mem = ((N + 1) * N * batchCount * sizeof(float));
         printf("Performing Solve test: N=%d, batchCount=%d, estimated memory usage:%d\n", N, batchCount, mem);
         //test to see if cublas initialization is slowing down later
-        
+
         cublasHandle_t handle;
         cublasCreate(&handle);
         gpuLinearSolverBatched_tester(N, batchCount, numThreads);
@@ -83,9 +84,10 @@ int main(int argc, char **argv)
 #endif
 
 #if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
-int omp_thread_count() {
+int omp_thread_count()
+{
     int n = 0;
-    #pragma omp parallel reduction(+:n)
+#pragma omp parallel reduction(+:n)
     n += 1;
     return n;
 }
@@ -260,7 +262,6 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     struct timeval t1, t2;
     int oldNumThreads;
 
-
     sizeA = N * N * batchCount;
     sizeB = N * 1 * batchCount;
 
@@ -277,19 +278,18 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     curandGenerateNormal(hostRandGenerator, h_A, sizeA, (float)0, (float)1);
     curandGenerateNormal(hostRandGenerator, h_B, sizeB, (float)0, (float)1);
 
-    //Perform test on GPU
-    #if !defined(DISABLE_GPU_TEST)
+//Perform test on GPU
+#if !defined(DISABLE_GPU_TEST)
 
     //First run test, this seems slower, possibly due to library loading
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
 
     gettimeofday(&t2, 0);
-    
+
     double gpuTime = (1000000.0 * (t2.tv_sec - t1.tv_sec) + t2.tv_usec - t1.tv_usec) / 1000.0;
 
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, gpuTime);
 
-    
     //Second run test, this seems to perform much better, needs investigation
     gettimeofday(&t1, 0);
     result = gpuLinearSolverBatched(N, h_A, h_B, &h_X, h_info, batchCount);
@@ -297,7 +297,6 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
 
     gpuTime = (1000000.0 * (t2.tv_sec - t1.tv_sec) + t2.tv_usec - t1.tv_usec) / 1000.0;
     printf("Batched Solve operation finished with exit code: %d in %f\n", result, gpuTime);
-    
 
 #endif //GPU_TEST
 
@@ -310,7 +309,6 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     int *ipiv;
     TESTING_CHECK(magma_imalloc_cpu(&ipiv, batchCount * N));
 
-    
     gettimeofday(&t1, 0);
     for (magma_int_t s = 0; s < batchCount; s++)
     {
@@ -325,7 +323,7 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     gettimeofday(&t2, 0);
 
     cpu_time = (1000000.0 * (t2.tv_sec - t1.tv_sec) + t2.tv_usec - t1.tv_usec) / 1000.0;
-    
+
     printf("lapack single thread finished in: %f\n", cpu_time);
 
 #if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
@@ -333,14 +331,14 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     omp_set_max_active_levels(2);
     oldNumThreads = omp_thread_count();
 
-    printf("OMP threads: %d\n",oldNumThreads );
+    printf("OMP threads: %d\n", oldNumThreads);
 #endif
 
     gettimeofday(&t1, 0);
 
 #if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
 //schedule(dynamic)
-#pragma omp parallel for 
+#pragma omp parallel for
 #endif
     for (magma_int_t s = 0; s < batchCount; s++)
     {
@@ -355,16 +353,16 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     gettimeofday(&t2, 0);
 
     cpu_time = (1000000.0 * (t2.tv_sec - t1.tv_sec) + t2.tv_usec - t1.tv_usec) / 1000.0;
-    
+
     printf("lapack computation finished in: %f\n", cpu_time);
 
-    //Second run with schedule dynamic
-    #if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
+//Second run with schedule dynamic
+#if !defined(BATCHED_DISABLE_PARCPU) && defined(_OPENMP)
     omp_set_num_threads(numThreads);
     omp_set_max_active_levels(2);
     oldNumThreads = omp_thread_count();
 
-    printf("OMP threads: %d\n",oldNumThreads );
+    printf("OMP threads: %d\n", oldNumThreads);
 #endif
 
     gettimeofday(&t1, 0);
@@ -386,10 +384,10 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     gettimeofday(&t2, 0);
 
     cpu_time = (1000000.0 * (t2.tv_sec - t1.tv_sec) + t2.tv_usec - t1.tv_usec) / 1000.0;
-    
+
     printf("lapack dynamic ver finished in: %f\n", cpu_time);
 
-    #endif //LAPACK_PERFORMANCE
+#endif //LAPACK_PERFORMANCE
 
     magma_free_cpu(h_A);
     magma_free_cpu(h_B);
@@ -397,6 +395,3 @@ int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
     magma_free_cpu(h_info);
     return result;
 }
-
-
-
