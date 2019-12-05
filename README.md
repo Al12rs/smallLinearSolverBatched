@@ -88,20 +88,31 @@ Which will export the profiling data to ./timeline.prof which can be imported in
 ## Code structure and configurations
 
 `main` is situated in `testing_sgesv_batched.cpp`, where also all the testing code is situated.
+
 This is the file that needs to be edited to remove lapack, blas and openmp dependencies. 
+
 To change the mode to manual tester the macro MANUAL_TEST needds to be defined in testing_sgesv_batched.cpp and to use the automatic tester comment the macro definition.
+
 Various macros with comments are present at the beginning of the file to change the manual test behavior.
+
 The manual test is performed by the function `gpuLinearSolverBatched_tester` while the autotester is performed by `gpuCSVTester` which is the function that needs to be edited to change the parameters of the autotest.
 
 To perform GPU solution the user needs prepare the linear systems in host memory and call `gpuLinearSolverBatched` which is in `linearSolverSLU_batched.cpp`. 
+
 This function allocates the device memory and transfers the data to the call `linearSolverSLU_batched` (same file) wich takes pointers to device memory to start executing the different phases.
+
 To perform LU decomposition the function `linearDecompSLU_batched` (in file `linearDecompSLU_batched.cpp`) is called, which in turn calls `magma_sgetrf_batched_smallsq_shfl` (`tinySLUfactorization_batched.cu`).
+
 Only now `magma_sgetrf_batched_smallsq_shfl` executes the kernel  `sgetrf_batched_smallsq_shfl_kernel` which contains the main calculations of the program to do the LU factorization.
+
 After the factorization is complete control returns to `linearSolverSLU_batched`which then calls `linearSolverFactorizedSLU_batched` (linearSolverFactorizedSLU_batched.cpp)
+
 This function uses various inexpensive other functions to manipulate the factorized data and obtain the resolution to the linear systems, by using forwards and backwards substitutions. 
+
 These functions are located in `set_pointer.cu`, `strsv_batched.cu`, `linearSolverFactorizedSLUutils.cu`  
 
 For the remiaining files we have `operation_batched.h` which contains the declaration of most host batched functions listed above, `utils.cpp` `utilscu.cuh` `utils.h` contain utility functions that are used thoughought the code.
+
 `testing.h`, `flops.h`, `magma_types.h` instead contain important magma definitions that are used throughout the code.
 
 
