@@ -21,11 +21,12 @@ For the Tester part, and not for the actual function these are also needed (stub
 
 
 After the dependencies are installed the following files will need to be edited to match the system configurations:
-    * Release/objects.mk  Here the Lapack, blas and intel64(if using intel version of lapack and blas) library paths are to be redefined. In general the libraries are defined here, so if something changes regarding them this file needs to be         edited accordgly.
-    * Release/makefile  This file needs to be edited to select the correct Nvidia target achitecture. Specifically in line 61, arch= and code= need to be changed according to these guidelines https://docs.nvidia.com/cuda/cuda-compiler-driver-       nvcc/index.html#options-for-steering-gpu-code-generation .
-      If OpenMP is to be removed then also remove the -Xcompiler -fopenmp options from the line (passes the -fopenmp line to the gcc compiler after nvcc completes compilation of kernels).
-    * Release/src/subdir.mk This file contains all the files that needs to be built and their dependencies, as well as the nvcc compilation invocations. Lapack linbrary paths need to be properly defined here. 
-      Nvidia target architecture needs to be defined here as well. 
+
+   * Release/objects.mk  Here the Lapack, blas and intel64(if using intel version of lapack and blas) library paths are to be redefined. In general the libraries are defined here, so if something changes regarding them this file needs to be        edited accordgly.
+   * Release/makefile  This file needs to be edited to select the correct Nvidia target achitecture. Specifically in line 61, arch= and code= need to be changed according to these guidelines https://docs.nvidia.com/cuda/cuda-compiler-driver-       nvcc/index.html#options-for-steering-gpu-code-generation .
+    If OpenMP is to be removed then also remove the -Xcompiler -fopenmp options from the line (passes the -fopenmp line to the gcc compiler after nvcc completes compilation of kernels).
+   * Release/src/subdir.mk This file contains all the files that needs to be built and their dependencies, as well as the nvcc compilation invocations. Lapack linbrary paths need to be properly defined here. 
+     Nvidia target architecture needs to be defined here as well. 
 
 To build the program cd to Release and execute
 
