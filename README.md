@@ -1,14 +1,14 @@
 # GPU Linear Solver Small Batched
 
-This project contains functions to solve large quantities of small square linear systems (NxN with N<32, single precision, dense), on GPU though the CUDA programming model. 
+This project contains functions to solve large quantities of small square linear systems (NxN with N<32, single precision, dense), on GPU using the CUDA programming model. 
 
 ## Building
-The software is written for Linux, built in Release mode though the use of make files (debug building is not supported).
+The software is written for Linux, built in Release mode through the use of make files (debug building is not supported).
 
 The software requires a number of dependencies to be installed to build:
 
    * gcc version 6.1.0+, lower versions might work but have not been tested.
-   * CUDA toolkit version 9 or more, lower might work but have not been testet. For optimal performance use CUDA 10+. 
+   * CUDA toolkit version 9 or more, lower versions might work but have not been tested. For optimal performance use CUDA 10+. 
      A guide on installing CUDA on linux is available here: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
      Particular care should be given to post installation actions https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#post-installation-actions which are required to make the cuda compiler and libraries visible.
      
@@ -17,7 +17,7 @@ For the Tester part, and not for the actual function these are also needed (stub
    * Lapack 3.8.0+, lower versions might work but have not been tested.
    * Blas 3.8.0+, lower versions might work but have not been tested.
    * gfortran (if using lapack and blas)
-   * OpenMP, This can easily be avoided by commenting the few lines of code where it's used.
+   * OpenMP, This can be easily avoided by commenting the few lines of code where it's used.
 
 
 After the dependencies are installed the following files will need to be edited to match the system configurations:
@@ -76,11 +76,11 @@ To run the program on the GPU nodes use the following command:
 
 adding command line parameters at the end if in manual mode.
 
-Change --cpus-per-task= to increase the number of phisical cpu cores available for openMP to use.
+Change --cpus-per-task= to increase the number of physical cpu cores available for OpenMP to use.
 
 Change --mem= to ingrease the maximum usable memory (gpu is limited to a little less than 12G) and currently the program is limited by int memory pointers.
 
-Change --time= to set the time limit in minutes of of the test. For autotester 20-30 minutes might be needed. For manual 3 minutes is already plenty. Mostly to ensure that the program does not go into infinite loop while on a work node.
+Change --time= to set the time limit in minutes of of the test. For autotester 20-30 minutes might be needed. For manual 3 minutes is already plenty enough. Mostly to ensure that the program does not go into an infinite loop while on a work node.
 
 Change --gres=gpu:kepler: to change the number of GPUs requested (in case of adding multi gpu support).
 
@@ -88,7 +88,7 @@ To peform profiling run add `cudaProfilerStart()` and `cudaProfilerStop()` befor
 
 `srun --nodes=1 --ntasks-per-node=1 --cpus-per-task=1 --mem=6G --time=3 --partition=gll_usr_gpuprod --gres=gpu:kepler:1  nvprof --export-profile timeline.prof -f --profile-from-start off --cpu-profiling off  ./gpulinearsolversmallbatched 16 1000 1`
 
-Which will export the profiling data to ./timeline.prof which can be imported into Visual Profile. Visual profile can import the file even if running on a windows machine (use scp to get the file).
+Which will export the profiling data to ./timeline.prof which can be imported into Visual Profile. Visual Profile can import the file even if it is running on a Windows machine (use scp to get the file).
 
 ## Code structure and configurations
 
@@ -96,7 +96,7 @@ Which will export the profiling data to ./timeline.prof which can be imported in
 
 This is the file that needs to be edited to remove lapack, blas and openmp dependencies. 
 
-To change the mode to manual tester the macro MANUAL_TEST needds to be defined in testing_sgesv_batched.cpp and to use the automatic tester comment the macro definition.
+To change the mode to manual tester the macro MANUAL_TEST needs to be defined in testing_sgesv_batched.cpp, on the other hand to use the automatic tester comment the macro definition.
 
 Various macros with comments are present at the beginning of the file to change the manual test behavior.
 
@@ -104,19 +104,19 @@ The manual test is performed by the function `gpuLinearSolverBatched_tester` whi
 
 To perform GPU solution the user needs prepare the linear systems in host memory and call `gpuLinearSolverBatched` which is in `linearSolverSLU_batched.cpp`. 
 
-This function allocates the device memory and transfers the data to the call `linearSolverSLU_batched` (same file) wich takes pointers to device memory to start executing the different phases.
+This function allocates the device memory and transfers the data to the call `linearSolverSLU_batched` (same file) which takes pointers to device memory to start executing the different phases.
 
 To perform LU decomposition the function `linearDecompSLU_batched` (in file `linearDecompSLU_batched.cpp`) is called, which in turn calls `magma_sgetrf_batched_smallsq_shfl` (`tinySLUfactorization_batched.cu`).
 
 Only now `magma_sgetrf_batched_smallsq_shfl` executes the kernel  `sgetrf_batched_smallsq_shfl_kernel` which contains the main calculations of the program to do the LU factorization.
 
-After the factorization is complete control returns to `linearSolverSLU_batched`which then calls `linearSolverFactorizedSLU_batched` (linearSolverFactorizedSLU_batched.cpp)
+After the factorization is complete control returns to `linearSolverSLU_batched` which then calls `linearSolverFactorizedSLU_batched` (linearSolverFactorizedSLU_batched.cpp)
 
 This function uses various inexpensive other functions to manipulate the factorized data and obtain the resolution to the linear systems, by using forwards and backwards substitutions. 
 
 These functions are located in `set_pointer.cu`, `strsv_batched.cu`, `linearSolverFactorizedSLUutils.cu`  
 
-For the remiaining files we have `operation_batched.h` which contains the declaration of most host batched functions listed above, `utils.cpp` `utilscu.cuh` `utils.h` contain utility functions that are used thoughought the code.
+For the remaining files we have `operation_batched.h` which contains the declaration of most host batched functions listed above, `utils.cpp` `utilscu.cuh` `utils.h` contain utility functions that are used throughout the code.
 
 `testing.h`, `flops.h`, `magma_types.h` instead contain important magma definitions that are used throughout the code.
 
