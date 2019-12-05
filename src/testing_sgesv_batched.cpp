@@ -91,6 +91,7 @@ int omp_thread_count() {
 }
 #endif
 
+// Autotester
 int gpuCSVTester()
 {
     int sizeA, sizeB, result;
@@ -110,6 +111,7 @@ int gpuCSVTester()
     fp = fopen("results.csv", "w+");
     fprintf(fp, "#N, #batchCount, #result, #GPUtimeInMs, #CPUtime1InMs, #CPUtime4InMs, #CPUtime8InMs, #CPUtime16InMs, #memMB, #memByte\n");
 
+    // Modify to test different batchCount values
     for (int i = 0; i < 8; i++)
     {
         switch (i)
@@ -143,6 +145,7 @@ int gpuCSVTester()
             break;
         }
 
+        //test for all sizes of matrices
         for (N = 1; N <= 32; N++)
         {
 
@@ -187,7 +190,7 @@ int gpuCSVTester()
             int *ipiv;
             TESTING_CHECK(magma_imalloc_cpu(&ipiv, batchCount * N));
 
-            //Single thread test
+            //Single thread CPU test
             gettimeofday(&t1, 0);
             for (magma_int_t s = 0; s < batchCount; s++)
             {
@@ -248,6 +251,7 @@ int gpuCSVTester()
     fclose(fp);
 }
 
+// Manual tester
 int gpuLinearSolverBatched_tester(int N, int batchCount, int numThreads)
 {
     int sizeA, sizeB, result;
