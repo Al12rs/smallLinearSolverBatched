@@ -6,15 +6,15 @@ This project contains functions to solve large quantities of small square linear
 The software is written for Linux, built in Release mode though the use of make files (debug building is not supported).
 
 The software requires a number of dependencies to be installed to build:
-* gcc version 6.1.0+, lower versions might work but have not been tested.
-* CUDA toolkit version 9 or more, lower might work but have not been testet. For optimal performance use CUDA 10+. 
-  A guide on installing CUDA on linux is available here: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
-  Particular care should be given to post installation actions https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#post-installation-actions which are required to make the cuda compiler and libraries visible.
+    * gcc version 6.1.0+, lower versions might work but have not been tested.
+    * CUDA toolkit version 9 or more, lower might work but have not been testet. For optimal performance use CUDA 10+. 
+      A guide on installing CUDA on linux is available here: https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html
+      Particular care should be given to post installation actions https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#post-installation-actions which are required to make the cuda compiler and libraries visible.
 For the Tester part, and not for the actual function these are also needed (stubbing of code is needed to avoid these dependencies).
-* Lapack 3.8.0+, lower versions might work but have not been tested.
-* Blas 3.8.0+, lower versions might work but have not been tested.
-* gfortran (if using lapack and blas)
-* OpenMP, This can easily be avoided by commenting the few lines of code where it's used.
+    * Lapack 3.8.0+, lower versions might work but have not been tested.
+    * Blas 3.8.0+, lower versions might work but have not been tested.
+    * gfortran (if using lapack and blas)
+    * OpenMP, This can easily be avoided by commenting the few lines of code where it's used.
 
 
 After the dependencies are installed the following files will need to be edited to match the system configurations:
